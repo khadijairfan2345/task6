@@ -2,37 +2,48 @@ pipeline {
     agent any
 
     stages {
-        stage('Build') {
+        stage('Checkout') {
             steps {
-                echo 'Building...'
-                // Add build commands here, for example:
-                // sh 'make'
+                checkout scm
             }
         }
-
+        stage('Setup Python') {
+            steps {
+                sh 'python -m venv venv'
+                sh '. venv/bin/activate'
+            }
+        }
+        stage('Install Dependencies') {
+            steps {
+                sh 'pip install -r requirements.txt'
+            }
+        }
         stage('Test') {
             steps {
-                echo 'Testing...'
-                // Add test commands here, for example:
-                // sh './run-tests.sh'
+                sh 'pytest test_app.py'
             }
         }
-
+        stage('Build Docker Image') {
+            steps {
+                script {
+                    def app = docker.build("my-flask-app:${env.BUILD_ID}")
+                }
+            }
+        }
         stage('Deploy') {
             steps {
                 echo 'Deploying...'
-                // Add deploy commands here, for example:
-                // sh './deploy.sh'
+                // Add deployment steps here
             }
         }
     }
-
+    
     post {
         success {
-            echo 'Build succeeded!'
+            echo 'Pipeline succeeded!'
         }
         failure {
-            echo 'Build failed!'
+            echo 'Pipeline failed.'
         }
     }
 }
